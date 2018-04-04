@@ -244,7 +244,7 @@ int main (int argc, char *argv[])
   std::string filename;
   std::stringstream ss;
 
-  std::string filePath = "/Users/gmessier/prj/net/sim/ns3/ns-3.27/";
+  std::string filePath = "/home/rajith/NS-3 Rajith/Results/";
 	ss.str( std::string() );
 	ss.clear();
 	ss << filePath << "N" << numSensorNodes << "_" << optString << "_";
@@ -339,18 +339,18 @@ int main (int argc, char *argv[])
   CREATE_STREAM_FILENAME("reports.txt");
   Ptr<OutputStreamWrapper> reportStream = asciiTraceHelper.CreateFileStream (filename,std::ios::app);
 
-//  CREATE_STREAM_FILENAME("locations.txt");
-//  Ptr<OutputStreamWrapper> locationStream = asciiTraceHelper.CreateFileStream (filename,std::ios::app);
+  //CREATE_STREAM_FILENAME("locations.txt");     
+  //Ptr<OutputStreamWrapper> locationStream = asciiTraceHelper.CreateFileStream (filename,std::ios::app); 
 
-/*  CREATE_STREAM_FILENAME("schedule.txt");
-  Ptr<OutputStreamWrapper> scheduleStream = asciiTraceHelper.CreateFileStream (filename,std::ios::app);
-*/
+  //CREATE_STREAM_FILENAME("schedule.txt");     
+  //Ptr<OutputStreamWrapper> scheduleStream = asciiTraceHelper.CreateFileStream (filename,std::ios::app); 
+
 
 	*(energyStream->GetStream()) << "Iter," << iter << ",--------------\n";
 	*(packetDropStream->GetStream()) << "Iter," << iter << ",--------------\n";
 	*(reportStream->GetStream()) << "Iter," << iter << ",--------------\n";
-//	*(locationStream->GetStream()) << "#" << iter << "#\n";
-//	*(scheduleStream->GetStream()) << "#" << iter << "#\n";
+	//*(locationStream->GetStream()) << "#" << iter << "#\n"; 
+	//*(scheduleStream->GetStream()) << "#" << iter << "#\n";
 
 
 	*(reportStream->GetStream()) << "Seed," << seed << "\n";
@@ -463,7 +463,7 @@ int main (int argc, char *argv[])
 		// Install application
 		isaHelper->InstallApplication(nc,i,sensorNodeApp);
 	}
-
+        
 	// Traces
   Ptr<NetDevice> baseDevice;
   for (uint16_t i = 0; i < numNodes; i++){
@@ -484,10 +484,18 @@ int main (int argc, char *argv[])
   isaHelper->SetTdmaOptAttribute("NumPktsNode", UintegerValue (1));
   isaHelper->SetTdmaOptAttribute("SensitivityDbm", DoubleValue (RX_SENSITIVITY));
 
+  int nNodes = nc.GetN (); //Rajith 0331    
+  NodeContainer ncNew; //Rajith 0331
+
+  for (int i = 0; i < nNodes; ++i)  //Rajith 0331
+  {     //Rajith 0331
+        if(i!=4) ncNew.Add(nc.Get(i));  //Rajith 0331      
+  }     //Rajith 0331
+
   // Call the helper
   clock_t begin = clock();
-  SchedulingResult schedResult = isaHelper->CreateOptimizedTdmaSchedule(nc,propLossModel,hoppingPattern,1,(OptimizerSelect)optimizerType,scheduleStream);
-  clock_t end = clock();
+  SchedulingResult schedResult = isaHelper->CreateOptimizedTdmaSchedule(ncNew,propLossModel,hoppingPattern,1,(OptimizerSelect)optimizerType,scheduleStream);
+  clock_t end = clock();   
 
   if(schedResult != SCHEDULE_FOUND){
     *(reportStream->GetStream()) << "Failure," << schedResult << "\n";
@@ -507,7 +515,7 @@ int main (int argc, char *argv[])
 
 
   // ********************************************** RUN SIMULATION **********************************************
-  Simulator::Stop (Seconds (SIM_DURATION_S));
+  Simulator::Stop (Seconds (SIM_DURATION_S));       
   NS_LOG_UNCOND (" Simulation is running ....");
   Simulator::Run ();
 
