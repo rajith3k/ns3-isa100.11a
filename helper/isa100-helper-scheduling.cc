@@ -58,6 +58,7 @@ void Isa100Helper::SetSfSchedule(
 {
 	Ptr<NetDevice> baseDevice = m_devices.Get(nodeInd);
 	Ptr<Isa100NetDevice> netDevice = baseDevice->GetObject<Isa100NetDevice>();
+        NS_LOG_UNCOND("Rajith SetSfSchedule nodeInd and numLinks"<<nodeInd<<" ,"<<numLink); //Rajith 0331
 
 	if(!netDevice)
 		NS_FATAL_ERROR("Installing schedule on non-existent ISA100 net device.");
@@ -132,7 +133,7 @@ SchedulingResult Isa100Helper::CreateOptimizedTdmaSchedule(NodeContainer c, Ptr<
   		NS_FATAL_ERROR("Invalid selection of optimizer!");
   }
 
-  // Set the attributes
+  // Set the attributes 
   SetTdmaOptimizerAttributes(tdmaOptimizer);
 
   // Pass network information to setup the optimizer
@@ -155,7 +156,6 @@ SchedulingResult Isa100Helper::CreateOptimizedTdmaSchedule(NodeContainer c, Ptr<
 
 SchedulingResult Isa100Helper::ScheduleAndRouteTdma(vector< vector<int> > flows, int packetsPerSlot)
 {
-
 	int numNodes = m_devices.GetN();
 	SchedulingResult schedulingResult = SCHEDULE_FOUND;
 
@@ -176,8 +176,9 @@ SchedulingResult Isa100Helper::ScheduleAndRouteTdma(vector< vector<int> > flows,
   for(int nNode=0; nNode < numNodes; nNode++){
 
     // Assign schedule to DL
-  	Ptr<NetDevice> baseDevice = m_devices.Get(nNode);
+        Ptr<NetDevice> baseDevice = m_devices.Get(nNode);
   	Ptr<Isa100NetDevice> netDevice = baseDevice->GetObject<Isa100NetDevice>();
+        if(nNode!=4){ // rajith 0331
 
     if(!baseDevice || !netDevice)
       NS_FATAL_ERROR("Installing TDMA schedule on non-existent ISA100 net device.");
@@ -202,14 +203,17 @@ SchedulingResult Isa100Helper::ScheduleAndRouteTdma(vector< vector<int> > flows,
 
     // Set the sfSchedule
     vector<uint8_t> hoppingPattern(1,11);  // Stay on channel 11.
-
+    
     Ptr<Isa100DlSfSchedule> schedulePtr = CreateObject<Isa100DlSfSchedule>();
 
     schedulePtr->SetSchedule(hoppingPattern,nodeSchedules[nNode].slotSched,nodeSchedules[nNode].slotType);
 
     netDevice->GetDl()->SetDlSfSchedule(schedulePtr);
+     }//rajith 0331
+        NS_LOG_UNCOND("Rajith Scheduling result: "<<nNode<<" ,"<<schedulingResult);//Rajith 0401
   }
-
+  
+  
   return schedulingResult;
 }
 
@@ -244,12 +248,12 @@ void Isa100Helper::CalculateTxPowers(NodeContainer c, Ptr<PropagationLossModel> 
 
   m_txPwrDbm = new double*[numNodes];
 
-  for(int iNode=0; iNode < numNodes; iNode++)
+  for(uint32_t iNode=0; iNode < numNodes; iNode++) //Rajtith int to uint32_t changed
   	m_txPwrDbm[iNode] = new double[numNodes];
 
-  for(int iNode=0; iNode < numNodes; iNode++){
+  for(uint32_t iNode=0; iNode < numNodes; iNode++){ //Rajtith int to uint32_t changed
 
-  	for(int jNode=iNode; jNode < numNodes; jNode++){
+  	for(uint32_t jNode=iNode; jNode < numNodes; jNode++){ //Rajtith int to uint32_t changed
   		if(iNode == jNode)
   			m_txPwrDbm[iNode][jNode] = rxSensitivityDbm;
   		else{
@@ -287,7 +291,7 @@ SchedulingResult Isa100Helper::FlowMatrixToTdmaSchedule(vector<NodeSchedule> &lA
 	// Init q with all nodes that can reach the sink directly.
 	vector<int> q;
 	for(int i=0; i<numNodes; i++)
-		if(packetFlows[i][0])
+		if(packetFlows[i][0] && i!=4) //Rajith 0401 "&& i!=4"
 			q.push_back(i);
 
 
@@ -295,7 +299,7 @@ SchedulingResult Isa100Helper::FlowMatrixToTdmaSchedule(vector<NodeSchedule> &lA
 	int nSlot = -1;
 	for(int i=0; i < numNodes; i++)
 		for(int j=0; j < numNodes; j++)
-			nSlot += packetFlows[i][j];
+			if(j!=4 || i!=0) nSlot += packetFlows[i][j]; //Rajith 0401 "if(j!=4 || i!=0) "
 
 	NS_LOG_UNCOND(" Scheduling " << nSlot << " slots.");
 	if(nSlot > m_numTimeslots)
@@ -335,7 +339,7 @@ SchedulingResult Isa100Helper::FlowMatrixToTdmaSchedule(vector<NodeSchedule> &lA
 				// Determine all nodes that can reach this non-leaf node
 				vector <int> nI;
 				for(int i=0; i < numNodes; i++)
-					if(packetFlows[i][ q[qInd] ])
+					if(packetFlows[i][ q[qInd] ] && i!=4) //Rajith 0401 " && i!=4"
 						nI.push_back(i);
 
 				for(int nIInd=0; nIInd < nI.size(); nIInd++){
@@ -452,7 +456,6 @@ SchedulingResult Isa100Helper::CalculateSourceRouteStrings(vector<std::string> &
 			bool firstEntry = true;
 			int numHops = 0;
 			while(curNode != 0){
-
 				unsigned int upperByte = (nextNode & 0xff00) >> 8;
 				unsigned int lowerByte = (nextNode & 0xff);
 
